@@ -3,12 +3,12 @@ package com.orangetalents.apicadastro.api;
 import com.orangetalents.apicadastro.api.model.PersonInput;
 import com.orangetalents.apicadastro.api.model.PersonOutput;
 import com.orangetalents.apicadastro.api.model.dto.PersonDTO;
+import com.orangetalents.apicadastro.api.model.dto.exceptionHandler.CampoDuplicadoException;
 import com.orangetalents.apicadastro.domain.repository.PersonRepository;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
 
@@ -26,10 +26,20 @@ public class PersonController {
     }
 
     @PostMapping
-    public PersonOutput save(@Valid @RequestBody PersonInput personInput){
-        return personDTO.toPersonOutput(repository.save(personDTO.toPerson(personInput)));
-    }
+    public ResponseEntity<?> save(@Valid @RequestBody PersonInput personInput){
 
+        if(!repository.findByCpf(personInput.getCpf()).isEmpty()){
+            throw new CampoDuplicadoException("CPF Já cadastrado!");
+        }
+
+        if(!repository.findByEmail(personInput.getEmail()).isEmpty()){
+            throw new CampoDuplicadoException("Email Já cadastrado!");
+        }
+
+        PersonOutput output= personDTO.toPersonOutput(repository.save(personDTO.toPerson(personInput)));
+        return new ResponseEntity<>(output,HttpStatus.CREATED);
+
+    }
 
 
 }
